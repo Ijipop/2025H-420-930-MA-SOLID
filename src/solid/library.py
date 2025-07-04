@@ -1,79 +1,118 @@
+"""
+
+
+
+
+
+******************JEAN-FRANCOIS LEFEBVRE******************
+
+Je mentionne que cela m'a pris 1 heure ++ juste pour comprendre le S de SMART.
+Je comprend un peu mieux le O et pour le reste je comprend l'idée mais j'aurai besoins
+de plus de temps et de pratique pour bien comprendre.
+
+"""
+
 from abc import ABC, abstractmethod
 
+"""Pour le S de SMART,J'ajoute la classe ValidateurISBN pour valider l'ISBN, parce que ce n'est pas la responsabilité 
+de la classe Livre.
+Ainsi plus tard si on veut changer la logique de validation, on peut le faire sans modifier la classe Livre, that's right.
+"""
+class ValidateurISBN:
+    @staticmethod
+    def valider(isbn: str):
+        if len(isbn.replace('-', '')) not in (10, 13):
+            raise ValueError("ISBN invalide")
 
+# Interface de base pour tous les livres
 class ILivre(ABC):
     @abstractmethod
     def genre(self) -> str:
-        """Retourne le genre du livre."""
         pass
 
     @abstractmethod
     def valider_isbn(self):
-        """Valide l'ISBN du livre."""
         pass
 
     @abstractmethod
     def afficher_format_long(self) -> str:
-        """Affiche le livre dans un format long."""
         pass
 
     @abstractmethod
     def nb_pages(self) -> int:
-        """Retourne le nombre de pages du livre."""
         pass
 
     @abstractmethod
     def narrateur(self) -> str:
-        """Retourne le nom du narrateur du livre (pour les livres Audio)."""
         pass
+"""
+Je sépare la classe Livre en deux sous-classes : LivrePapier et LivreAudio. Parce que
+les livres papier et audio ont des propriétés différentes. ***Exemple*** plus tard on pourra ajouter disons, la durée du livre
+audio sans passer par la classe Livre, on pourra le faire dans la classe LivreAudio. Ainsi on respecte le principe de 
+responsabilité unique. Incroyable.
 
+"""
 class Livre(ILivre):
-    def __init__(self, isbn: str, titre: str,
-                 auteur: str, genre: str,
-                 narrateur: str | None = None,
-                 nb_pages: int | None = None):
+
+
+    """
+Pour le O de OPEN/CLOSED, J'ai enlevé ceci
+
+def afficher_format_long(self) -> str:
+    if self.genre() == "BD":
+        return f"{self.titre} – {self.auteur} (BD, ISBN: {self.isbn})"
+    elif self.genre() == "Roman":
+        return f"{self.titre} – {self.auteur} (Roman, ISBN: {self.isbn})"
+    et remplacé par ceci
+
+
+    def afficher_format_long(self) -> str:
+        return f"{self.titre} – {self.auteur} ({self._genre}, ISBN: {self.isbn})"
+    Ainsi si on veut ajouter un nouveau genre, 
+    on peut le faire sans modifier la classe Livre, on ne rit plus.
+"""
+    def __init__(self, isbn: str, titre: str, auteur: str, genre: str):
         self.isbn = isbn
         self.titre = titre
         self.auteur = auteur
         self._genre = genre
-        self._narrateur = narrateur
-        self._nb_pages = nb_pages
 
     def genre(self) -> str:
         return self._genre
 
     def valider_isbn(self):
-        """Logique de validation de l'ISBN."""
-        if len(self.isbn.replace('-', '')) not in (10, 13):
-            raise ValueError("ISBN invalide")
-        # autres règles de validation...
+        ValidateurISBN.valider(self.isbn)
 
+#Voici la modif
     def afficher_format_long(self) -> str:
-        """Format d'affichage personnalisé."""
-        if self.genre() == "BD":
-            return f"{self.titre} – {self.auteur} (BD, ISBN: {self.isbn})"
-        elif self.genre()  == "Roman":
-            return f"{self.titre} – {self.auteur} (Roman, ISBN: {self.isbn})"
-        elif self.genre()  == "Science-fiction":
-            return f"{self.titre} – {self.auteur} (Science-fiction, ISBN: {self.isbn})"
-        elif self.genre() == "Documentaire":
-            return f"{self.titre} – {self.auteur} (Documentaire, ISBN: {self.isbn})"
-        else:
-            return f"{self.titre} – {self.auteur} (ISBN: {self.isbn})"
+        return f"{self.titre} – {self.auteur} ({self._genre}, ISBN: {self.isbn})"
+
+# Sous-classe pour les livres en papyrus
+class LivrePapier(Livre):
+    def __init__(self, isbn, titre, auteur, genre, nb_pages):
+        super().__init__(isbn, titre, auteur, genre)
+        self._nb_pages = nb_pages
 
     def nb_pages(self) -> int:
-        if self._nb_pages is not None:
-            return self._nb_pages
-        else:
-            # Les livres audio n'ont pas de pages
-            return -1
+        return self._nb_pages
 
     def narrateur(self) -> str:
-        if self._narrateur is not None:
-            return self._narrateur
-        else:
-            # Les livres qui ne sont pas audio n'ont pas de narrateur
-            return ""
+        return ""  # Non applicable
+
+# Sous-classe pour les livres audio
+class LivreAudio(Livre):
+    def __init__(self, isbn, titre, auteur, genre, narrateur):
+        super().__init__(isbn, titre, auteur, genre)
+        self._narrateur = narrateur
+
+    def nb_pages(self) -> int:
+        return -1  # Non applicable
+
+    def narrateur(self) -> str:
+        return self._narrateur
+
+
+
 
 class Bibliotheque:
     def __init__(self):
